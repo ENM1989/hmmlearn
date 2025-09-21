@@ -2,28 +2,14 @@
 
 namespace HMM;
 
-/**
- * Functions for calculating log probabilities under multivariate Gaussian distributions.
- *
- * It's assumed that a matrix/numerical library would be used in a real-world PHP scenario.
- * For the purpose of this conversion, we will use basic PHP arrays,
- * and some functions requiring complex matrix operations will be placeholders.
- */
+use NDArray;
+
 class Stats
 {
-    const TINY = 1.0e-15; // A small number to prevent log(0) or division by zero.
-
     /**
      * Compute the log probability under a multivariate Gaussian distribution.
-     *
-     * @param array $X List of n_features-dimensional data points. Shape: (n_samples, n_features)
-     * @param array $means List of mean vectors. Shape: (n_components, n_features)
-     * @param mixed $covars Covariance parameters. Shape depends on $covariance_type.
-     * @param string $covariance_type The type of covariance. One of: 'spherical', 'tied', 'diag', 'full'.
-     * @return array Array of log probabilities. Shape: (n_samples, n_components)
-     * @throws \ValueError If covariance_type is invalid.
      */
-    public static function log_multivariate_normal_density(array $X, array $means, $covars, string $covariance_type = 'diag'): array
+    public static function log_multivariate_normal_density(NDArray $X, NDArray $means, NDArray $covars, string $covariance_type = 'diag'): NDArray
     {
         switch ($covariance_type) {
             case 'spherical':
@@ -39,91 +25,76 @@ class Stats
         }
     }
 
-    /**
-     * Compute Gaussian log-density at X for a diagonal model.
-     */
-    private static function _log_multivariate_normal_density_diag(array $X, array $means, array $covars): array
+    private static function _log_multivariate_normal_density_diag(NDArray $X, NDArray $means, NDArray $covars): NDArray
     {
-        $ns = count($X);
-        if ($ns === 0) {
-            return [];
-        }
-        $nc = count($means);
-        $nf = count($means[0]);
+        $nf = $means->shape()[1];
+        $safe_covars = NDArray::maximum($covars, NDArray::float_min());
 
-        // Add a tiny epsilon to covars to avoid log(0) or division by zero
-        $safe_covars = array_map(function ($row) {
-            return array_map(function ($c) {
-                return max($c, self::TINY);
-            }, $row);
-        }, $covars);
+        $log_pi = $nf * log(2 * M_PI);
+        $log_det = NDArray::log($safe_covars)->sum(1);
 
-        $log_covars_sum = [];
-        for ($c = 0; $c < $nc; $c++) {
-            $log_covars_sum[$c] = array_sum(array_map('log', $safe_covars[$c]));
-        }
+        $diff = NDArray::subtract($X->reshape($X->shape()[0], 1, $nf), $means);
+        $mahal = NDArray::divide($diff->pow(2), $safe_covars)->sum(2);
 
-        $lpr = array_fill(0, $ns, array_fill(0, $nc, 0.0));
-
-        for ($s = 0; $s < $ns; $s++) {
-            for ($c = 0; $c < $nc; $c++) {
-                $sum_sq_diff = 0;
-                for ($f = 0; $f < $nf; $f++) {
-                    $diff = $X[$s][$f] - $means[$c][$f];
-                    $sum_sq_diff += ($diff * $diff) / $safe_covars[$c][$f];
-                }
-                $lpr[$s][$c] = -0.5 * ($nf * log(2 * M_PI) + $log_covars_sum[$c] + $sum_sq_diff);
-            }
-        }
-
-        return $lpr;
+        return NDArray::multiply(
+            NDArray::add(NDArray::add($log_pi, $log_det), $mahal),
+            -0.5
+        );
     }
 
-    /**
-     * Compute Gaussian log-density at X for a spherical model.
-     */
-    private static function _log_multivariate_normal_density_spherical(array $X, array $means, array $covars): array
+    private static function _log_multivariate_normal_density_spherical(NDArray $X, NDArray $means, NDArray $covars): NDArray
     {
-        $nc = count($means);
-        $nf = count($means[0]);
+        $nc = $means->shape()[0];
+        $nf = $means->shape()[1];
 
-        // Broadcast covars to the shape (n_components, n_features)
-        $broadcasted_covars = [];
-        for ($c = 0; $c < $nc; $c++) {
-            $broadcasted_covars[$c] = array_fill(0, $nf, $covars[$c]);
+        if ($covars->ndim() == 1) {
+            $covars = $covars->reshape(-1, 1);
         }
+        $broadcasted_covars = NDArray::tile($covars, [1, $nf]);
 
         return self::_log_multivariate_normal_density_diag($X, $means, $broadcasted_covars);
     }
 
-    /**
-     * Compute Gaussian log-density at X for a tied model.
-     */
-    private static function _log_multivariate_normal_density_tied(array $X, array $means, array $covars): array
+    private static function _log_multivariate_normal_density_tied(NDArray $X, NDArray $means, NDArray $covars): NDArray
     {
-        $nc = count($means);
-        // Broadcast covars to shape (n_components, n_features, n_features)
-        $broadcasted_covars = array_fill(0, $nc, $covars);
+        $nc = $means->shape()[0];
+        $nf = $means->shape()[1];
+        $broadcasted_covars = NDArray::tile($covars, [$nc, 1, 1]);
         return self::_log_multivariate_normal_density_full($X, $means, $broadcasted_covars);
     }
 
-    /**
-     * Log probability for full covariance matrices.
-     *
-     * @todo This is a placeholder. A robust implementation requires a numerical library
-     *       for Cholesky decomposition and solving triangular systems.
-     */
-    private static function _log_multivariate_normal_density_full(array $X, array $means, array $covars): array
+    private static function _log_multivariate_normal_density_full(NDArray $X, NDArray $means, NDArray $covars, float $min_covar = 1.e-7): NDArray
     {
-        trigger_error(
-            "_log_multivariate_normal_density_full() is a placeholder. " .
-            "This function requires a numerical library for Cholesky decomposition.",
-            E_USER_WARNING
-        );
+        $nc = $means->shape()[0];
+        $nf = $means->shape()[1];
+        $log_prob = [];
 
-        $ns = count($X);
-        $nc = count($means);
-        // Return an array of NaNs or zeros to match the expected output shape.
-        return array_fill(0, $ns, array_fill(0, $nc, NAN));
+        for ($c = 0; $c < $nc; $c++) {
+            $mu = $means->slice($c);
+            $cv = $covars->slice($c);
+
+            try {
+                $cv_chol = NDArray::linalg_cholesky($cv);
+            } catch (\Exception $e) {
+                try {
+                    $cv_chol = NDArray::linalg_cholesky(NDArray::add($cv, NDArray::eye($nf)->mul($min_covar)));
+                } catch (\Exception $e) {
+                    throw new \ValueError("'covars' must be symmetric, positive-definite");
+                }
+            }
+
+            $cv_log_det = NDArray::diag($cv_chol)->log()->sum() * 2;
+
+            $diff = NDArray::subtract($X, $mu);
+            $cv_sol = NDArray::linalg_solve_triangular($cv_chol, $diff->T(), true)->T();
+
+            $term1 = $nf * log(2 * M_PI);
+            $term2 = $cv_sol->pow(2)->sum(1);
+            $term3 = $cv_log_det;
+
+            $log_prob[] = NDArray::multiply(NDArray::add(NDArray::add($term1, $term2), $term3), -0.5)->toArray();
+        }
+
+        return NDArray::array($log_prob)->T();
     }
 }

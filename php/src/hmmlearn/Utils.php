@@ -127,26 +127,20 @@ class Utils
      * @return mixed The generated covariance matrices.
      * @throws \ValueError If the covariance_type is invalid.
      */
-    public static function distribute_covar_matrix_to_match_covariance_type(array $tied_cv, string $covariance_type, int $n_components)
+    public static function distribute_covar_matrix_to_match_covariance_type(\NDArray $tied_cv, string $covariance_type, int $n_components): \NDArray
     {
         switch ($covariance_type) {
             case 'spherical':
-                $n_dim = count($tied_cv[0]);
-                $total_sum = array_sum(array_map('array_sum', $tied_cv));
-                $total_count = count($tied_cv) * $n_dim;
-                $mean = $total_sum / $total_count;
-                $row = array_fill(0, $n_dim, $mean);
-                return array_fill(0, $n_components, $row);
+                $mean = $tied_cv->mean();
+                $shape = $tied_cv->shape()[1];
+                $ones = \NDArray::ones([$shape]);
+                return \NDArray::tile($ones->mul($mean), [$n_components, 1]);
             case 'tied':
                 return $tied_cv;
             case 'diag':
-                $diag = [];
-                for ($i = 0; $i < count($tied_cv); $i++) {
-                    $diag[] = $tied_cv[$i][$i];
-                }
-                return array_fill(0, $n_components, $diag);
+                return \NDArray::tile(\NDArray::diag($tied_cv), [$n_components, 1]);
             case 'full':
-                return array_fill(0, $n_components, $tied_cv);
+                return \NDArray::tile($tied_cv, [$n_components, 1, 1]);
             default:
                 throw new \ValueError("covariance_type must be one of 'spherical', 'tied', 'diag', 'full'");
         }

@@ -1,0 +1,23 @@
+{
+  "name": "numpower/numpower",
+  "type": "library",
+  "license": "MIT",
+  "description": "PHP extension for efficient scientific computing and array manipulation with GPU support.",
+  "authors": [
+    {
+      "name": "The NumPower Community",
+      "email": "contact@numpower.org"
+    },
+    {
+      "name": "Henrique Borba",
+      "email": "henrique.borba.dev@gmail.com"
+    }
+  ],
+  "homepage": "https://www.numpower.org",
+  "require": {
+    "php": ">=8.2",
+    "ext-numpower": "0.6.0"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
