@@ -1,0 +1,10 @@
+{
+    "require": {
+        "numpower/numpower": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "HMM\\": "src/hmmlearn/"
+        }
+    }
+}

@@ -1,0 +1,60 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "2eb953f6510b10fef43ef623b03a2f64",
+    "packages": [
+        {
+            "name": "numpower/numpower",
+            "version": "0.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/NumPower/numpower-composer.git",
+                "reference": "3721271deada6d4332b73f67728b3499cdba0034"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/NumPower/numpower-composer/zipball/3721271deada6d4332b73f67728b3499cdba0034",
+                "reference": "3721271deada6d4332b73f67728b3499cdba0034",
+                "shasum": ""
+            },
+            "require": {
+                "ext-numpower": "0.6.0",
+                "php": ">=8.2"
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "The NumPower Community",
+                    "email": "contact@numpower.org"
+                },
+                {
+                    "name": "Henrique Borba",
+                    "email": "henrique.borba.dev@gmail.com"
+                }
+            ],
+            "description": "PHP extension for efficient scientific computing and array manipulation with GPU support.",
+            "homepage": "https://www.numpower.org",
+            "support": {
+                "issues": "https://github.com/NumPower/numpower-composer/issues",
+                "source": "https://github.com/NumPower/numpower-composer/tree/0.6.0"
+            },
+            "time": "2024-07-16T16:04:08+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {},
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {},
+    "platform-dev": {},
+    "plugin-api-version": "2.6.0"
+}
