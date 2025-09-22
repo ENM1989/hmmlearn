@@ -5,6 +5,44 @@ namespace HMM;
 use SplQueue;
 use Exception;
 
+/**
+ * @internal A simple seeded random number generator.
+ * This is a basic LCG implementation for reproducibility.
+ */
+class SimpleRandomState
+{
+    private int $seed;
+    private const A = 1664525;
+    private const C = 1013904223;
+    private const M = 4294967296; // 2**32
+
+    public function __construct(?int $seed = null)
+    {
+        if ($seed === null) {
+            $seed = random_int(0, self::M - 1);
+        }
+        $this->seed = $seed;
+    }
+
+    private function _next_int(): int
+    {
+        $this->seed = (self::A * $this->seed + self::C);
+        // PHP's % operator handles negative numbers differently than C's,
+        // so we need to ensure the result is positive.
+        $this->seed = ($this->seed % self::M + self::M) % self::M;
+        return $this->seed;
+    }
+
+    /**
+     * Returns a random float between 0.0 (inclusive) and 1.0 (exclusive).
+     */
+    public function rand(): float
+    {
+        return $this->_next_int() / self::M;
+    }
+}
+
+
 // ##################################################################
 // STUBS AND HELPERS
 // ##################################################################
@@ -136,15 +174,15 @@ abstract class _AbstractHMM
     public string $params;
     public string $init_params;
     public string $implementation;
-    // public $random_state; // TODO: Implement random state handling
+    public SimpleRandomState $random_state;
 
     public function __construct(
-        int $n_components, string $algorithm, /*$random_state,*/ int $n_iter,
+        int $n_components, string $algorithm, $random_state, int $n_iter,
         float $tol, bool $verbose, string $params, string $init_params, string $implementation
     ) {
         $this->n_components = $n_components;
         $this->algorithm = $algorithm;
-        // $this->random_state = $random_state;
+        $this->random_state = Utils::check_random_state($random_state);
         $this->n_iter = $n_iter;
         $this->tol = $tol;
         $this->verbose = $verbose;
@@ -255,11 +293,14 @@ class BaseHMM extends _AbstractHMM
 
     public function __construct(
         int $n_components = 1, float $startprob_prior = 1.0, float $transmat_prior = 1.0,
-        string $algorithm = "viterbi", int $n_iter = 10, float $tol = 1e-2,
+        string $algorithm = "viterbi", $random_state = null, int $n_iter = 10, float $tol = 1e-2,
         bool $verbose = false, string $params = "st", string $init_params = "st",
         string $implementation = "log"
     ) {
-        parent::__construct($n_components, $algorithm, $n_iter, $tol, $verbose, $params, $init_params, $implementation);
+        parent::__construct(
+            $n_components, $algorithm, $random_state, $n_iter, $tol, $verbose, $params,
+            $init_params, $implementation
+        );
         $this->startprob_prior = $startprob_prior;
         $this->transmat_prior = $transmat_prior;
         $this->monitor_ = new ConvergenceMonitor($this->tol, $this->n_iter, $this->verbose);
