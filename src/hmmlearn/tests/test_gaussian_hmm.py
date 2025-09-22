@@ -85,9 +85,11 @@ class GaussianHMMTestMixin:
         X, _state_sequence = h.sample(sum(lengths), random_state=self.prng)
 
         # Mess up the parameters and see if we can re-learn them.
-        # TODO: change the params and uncomment the check
-        h.fit(X, lengths=lengths)
-        # assert_log_likelihood_increasing(h, X, lengths, n_iter)
+        h_fit = hmm.GaussianHMM(
+            self.n_components, self.covariance_type,
+            implementation=implementation, params=params, n_iter=0, **kwargs)
+        h_fit.fit(X, lengths=lengths)
+        assert_log_likelihood_increasing(h_fit, X, lengths, n_iter)
 
     @pytest.mark.parametrize("implementation", ["scaling", "log"])
     def test_criterion(self, implementation):

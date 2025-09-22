@@ -121,9 +121,12 @@ class ConvergenceMonitor:
     def converged(self):
         """Whether the EM algorithm converged."""
         # XXX we might want to check that ``log_prob`` is non-decreasing.
-        return (self.iter == self.n_iter or
-                (len(self.history) >= 2 and
-                 self.history[-1] - self.history[-2] < self.tol))
+        if len(self.history) < 2:
+            return self.iter == self.n_iter
+
+        return (self.iter == self.n_iter
+                or self.history[-1] - self.history[-2] < self.tol
+                or self.history[-1] < self.history[-2])
 
 
 class _AbstractHMM(BaseEstimator):

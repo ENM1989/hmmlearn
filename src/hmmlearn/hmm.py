@@ -343,10 +343,14 @@ class GaussianHMM(_emissions.BaseGaussianHMM, BaseHMM):
         means_prior = self.means_prior
         means_weight = self.means_weight
 
-        # TODO: find a proper reference for estimates for different
-        #       covariance models.
-        # Based on Huang, Acero, Hon, "Spoken Language Processing",
-        # p. 443 - 445
+        # References:
+        # A. L. Rabiner. A tutorial on hidden Markov models and selected
+        # applications in speech recognition. Proceedings of the IEEE,
+        # 77(2):257-286, 1989.
+        #
+        # X. D. Huang, A. Acero, and H. Hon. Spoken Language Processing: A
+        # Guide to Theory, Algorithm, and System Development. Prentice
+        # Hall, 2001.
         denom = stats['post'][:, None]
         if 'm' in self.params:
             self.means_ = ((means_weight * means_prior + stats['obs'])

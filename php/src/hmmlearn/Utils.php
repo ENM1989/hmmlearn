@@ -145,4 +145,18 @@ class Utils
                 throw new \ValueError("covariance_type must be one of 'spherical', 'tied', 'diag', 'full'");
         }
     }
+
+    public static function check_random_state($seed = null): SimpleRandomState
+    {
+        if ($seed === null) {
+            return new SimpleRandomState();
+        }
+        if (is_int($seed)) {
+            return new SimpleRandomState($seed);
+        }
+        if ($seed instanceof SimpleRandomState) {
+            return $seed;
+        }
+        throw new \ValueError("random_state must be an integer, a SimpleRandomState instance, or null.");
+    }
 }
